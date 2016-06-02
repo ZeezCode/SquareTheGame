@@ -163,7 +163,7 @@ public class Game extends JGameGUI {
 							for (int i=0; i<newEnemyCount; i++) {
 								spawnNewEnemy();
 							}
-							enemies.remove(enemy);
+							enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
 						}
 					};
 					timer.schedule(task, 250);
