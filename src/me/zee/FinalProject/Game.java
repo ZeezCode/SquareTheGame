@@ -19,7 +19,7 @@ public class Game extends JGameGUI {
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private String title;
 	private int wide, tall, killCounter = 0;
-	private boolean gameIsPaused=false, gameHasStarted=false;
+	private boolean gameIsPaused=false, gameHasStarted=false, gameHasEnded=false;
 	public Window gameScreen;
 	private CollidableImageElement player;
 	private TextElement killCounterDisplay;
@@ -80,7 +80,7 @@ public class Game extends JGameGUI {
 	}
 
 	public void resumeGame() {
-		if (gameIsPaused) {
+		if (gameIsPaused==true && gameHasEnded==false) {
 			gameIsPaused=false;
 		}
 	}
@@ -166,7 +166,7 @@ public class Game extends JGameGUI {
 					killCounter++;
 					killCounterDisplay.setText(Integer.toString(killCounter));
 					
-					int newEnemyCount = new Random().nextInt(1);
+					int newEnemyCount = new Random().nextInt(3);
 					
 					Timer timer = new Timer();
 					TimerTask task = new TimerTask() {
@@ -182,6 +182,7 @@ public class Game extends JGameGUI {
 								TextElement victoryDisplayMsg = new TextElement((wide/2)-265, (tall/2), 5, "You've won! There are no more enemies!");
 								victoryDisplayMsg.setColor(Color.GREEN);
 								gameScreen.addElement(victoryDisplayMsg);
+								gameHasEnded = true;
 							}
 						}
 					};
