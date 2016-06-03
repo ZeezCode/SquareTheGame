@@ -8,9 +8,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.swing.ImageIcon;
-
 import com.ethanzeigler.jgamegui.JGameGUI;
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
 import com.ethanzeigler.jgamegui.element.TextElement;
@@ -21,7 +19,7 @@ public class Game extends JGameGUI {
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private String title;
 	private int wide, tall, killCounter = 0;
-	private boolean gameIsPaused=false;
+	private boolean gameIsPaused=false, gameHasStarted=false;
 	public Window gameScreen;
 	private CollidableImageElement player;
 	private TextElement killCounterDisplay;
@@ -34,6 +32,16 @@ public class Game extends JGameGUI {
 		this.title = title;
 		this.wide = (int) wide;
 		this.tall = (int) tall;
+	}
+	
+	public boolean getGameIsOver() {
+		if (!(gameHasStarted)) return false;
+		
+		int counter = 0;
+		for (Enemy enemy : enemies) {
+			if (enemy.isAlive()) counter++;
+		}
+		return counter == 0;
 	}
 
 	@SuppressWarnings("unused")
@@ -114,6 +122,7 @@ public class Game extends JGameGUI {
 				for (int i=0; i<STARTING_ENEMY_COUNT; i++) {
 					spawnNewEnemy();
 				}
+				gameHasStarted=true;
 			}
 		};
 		timer.schedule(myTask, 3*1000);
@@ -128,25 +137,27 @@ public class Game extends JGameGUI {
 	 */
 	@Override
 	protected void onScreenUpdate(JGameGUI gui) {
-		if (isWDown) {
-			if (player.getOriginY()>9) {
-				player.setOriginY(player.getOriginY()-PLAYER_MOVE_SPEED);
-			} else player.setOriginY(9);
-		}
-		if (isSDown) {
-			if (player.getOriginY()<(tall-87)) {
-				player.setOriginY(player.getOriginY()+PLAYER_MOVE_SPEED);
-			} else player.setOriginY(tall-87);
-		}
-		if (isADown) {
-			if (player.getOriginX()>-14) {
-				player.setOriginX(player.getOriginX()-PLAYER_MOVE_SPEED);
-			} else player.setOriginX(-14);
-		}
-		if (isDDown) {
-			if (player.getOriginX()<(wide-88)) {
-				player.setOriginX(player.getOriginX()+PLAYER_MOVE_SPEED);
-			} else player.setOriginX(wide-88);
+		if (!(gameIsPaused)) {
+			if (isWDown) {
+				if (player.getOriginY()>9) {
+					player.setOriginY(player.getOriginY()-PLAYER_MOVE_SPEED);
+				} else player.setOriginY(9);
+			}
+			if (isSDown) {
+				if (player.getOriginY()<(tall-87)) {
+					player.setOriginY(player.getOriginY()+PLAYER_MOVE_SPEED);
+				} else player.setOriginY(tall-87);
+			}
+			if (isADown) {
+				if (player.getOriginX()>-14) {
+					player.setOriginX(player.getOriginX()-PLAYER_MOVE_SPEED);
+				} else player.setOriginX(-14);
+			}
+			if (isDDown) {
+				if (player.getOriginX()<(wide-88)) {
+					player.setOriginX(player.getOriginX()+PLAYER_MOVE_SPEED);
+				} else player.setOriginX(wide-88);
+			}
 		}
 
 		for (Enemy enemy : enemies) {
@@ -155,7 +166,7 @@ public class Game extends JGameGUI {
 					killCounter++;
 					killCounterDisplay.setText(Integer.toString(killCounter));
 					
-					int newEnemyCount = new Random().nextInt(3);
+					int newEnemyCount = new Random().nextInt(1);
 					
 					Timer timer = new Timer();
 					TimerTask task = new TimerTask() {
@@ -164,9 +175,17 @@ public class Game extends JGameGUI {
 								spawnNewEnemy();
 							}
 							enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
+							
+							if (getGameIsOver()==true) { //Used to have this in another timer, but kept ending the game then spawning new enemies afterwards, dunno why
+														 //This fixed it anyway so w/e
+								gameIsPaused=true;
+								TextElement victoryDisplayMsg = new TextElement((wide/2)-265, (tall/2), 5, "You've won! There are no more enemies!");
+								victoryDisplayMsg.setColor(Color.GREEN);
+								gameScreen.addElement(victoryDisplayMsg);
+							}
 						}
 					};
-					timer.schedule(task, 250);
+					timer.schedule(task, 100);
 					enemy.kill();
 				}
 			}
