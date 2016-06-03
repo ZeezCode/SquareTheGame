@@ -48,17 +48,8 @@ public class Enemy {
 	public MOVE_DIRECTION getMoveDirection() {
 		return this.moveDirection;
 	}
-	public void setMoveDirection(MOVE_DIRECTION moveD) throws IllegalArgumentException {
-		if (moveD==MOVE_DIRECTION.UP 
-				|| moveD==MOVE_DIRECTION.UP_RIGHT 
-				|| moveD==MOVE_DIRECTION.RIGHT
-				|| moveD==MOVE_DIRECTION.DOWN_RIGHT
-				|| moveD==MOVE_DIRECTION.DOWN
-				|| moveD==MOVE_DIRECTION.DOWN_LEFT
-				|| moveD==MOVE_DIRECTION.LEFT
-				|| moveD==MOVE_DIRECTION.UP_LEFT) {
+	public void setMoveDirection(MOVE_DIRECTION moveD) {
 			this.moveDirection = moveD;
-		} else throw new IllegalArgumentException("Argument must be valid MOVE_DIRECTION");
 	}
 	
 	public void kill() {
