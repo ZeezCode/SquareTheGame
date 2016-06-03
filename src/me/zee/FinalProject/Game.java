@@ -39,7 +39,7 @@ public class Game extends JGameGUI {
 	@SuppressWarnings("unused")
 	public void spawnNewEnemy() {
 		Dimension pos = getRandomPosition();
-		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
+		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
 		if (enemy==null) {
 			System.out.println("Enemy is null");
 			return;
@@ -98,7 +98,7 @@ public class Game extends JGameGUI {
 	protected void onStart(JGameGUI g) {
 		Dimension dim = Main.getDimensions();
 		gameScreen = new Window();
-		player = new CollidableImageElement(new ImageIcon("circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
+		player = new CollidableImageElement(new ImageIcon("resources/circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
 		gameScreen.addElement(player);
 		killCounterDisplay = new TextElement(20, 60, 4, Integer.toString(killCounter));
 		killCounterDisplay.setColor(Color.RED);
