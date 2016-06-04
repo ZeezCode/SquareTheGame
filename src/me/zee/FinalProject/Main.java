@@ -37,17 +37,17 @@ public class Main {
 		startBtn = new JButton("Start!");
 		frame.add(startBtn);
 		
-		quitBtn = new JButton("Quit");
-		frame.add(quitBtn);
-		
 		helpBtn = new JButton("Help");
 		frame.add(helpBtn);
+		
+		quitBtn = new JButton("Quit");
+		frame.add(quitBtn);
 		
 		btnHandler = new ButtonHandler(startBtn, quitBtn, helpBtn, GAME_TITLE, wide, tall);
 		
 		startBtn.addActionListener(btnHandler);
-		quitBtn.addActionListener(btnHandler);
 		helpBtn.addActionListener(btnHandler);
+		quitBtn.addActionListener(btnHandler);
 		
 		frame.getRootPane().setDefaultButton(startBtn);
 		frame.setLocationRelativeTo(null);
