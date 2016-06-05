@@ -4,10 +4,13 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.ImageIcon;
 import com.ethanzeigler.jgamegui.JGameGUI;
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
@@ -42,6 +45,17 @@ public class Game extends JGameGUI {
 			if (enemy.isAlive()) counter++;
 		}
 		return counter == 0;
+	}
+	
+	public void playKillSound() {
+		try {
+			Clip clip = AudioSystem.getClip();
+			clip.open(AudioSystem.getAudioInputStream(new File("resources/bang.wav")));
+			clip.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	@SuppressWarnings("unused")
@@ -137,7 +151,7 @@ public class Game extends JGameGUI {
 	 */
 	@Override
 	protected void onScreenUpdate(JGameGUI gui) {
-		if (!(gameIsPaused)) {
+		if (gameIsPaused==false && gameHasStarted==true) {
 			if (isWDown) {
 				if (player.getOriginY()>9) {
 					player.setOriginY(player.getOriginY()-PLAYER_MOVE_SPEED);
@@ -165,6 +179,7 @@ public class Game extends JGameGUI {
 				if (calcDistance(player.getOriginX(), player.getOriginY(), enemy.getImageElement().getOriginX(), enemy.getImageElement().getOriginY())<=85) {
 					killCounter++;
 					killCounterDisplay.setText(Integer.toString(killCounter));
+					playKillSound();
 					
 					int newEnemyCount = new Random().nextInt(3);
 					
