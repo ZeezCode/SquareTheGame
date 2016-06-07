@@ -16,6 +16,10 @@ public class Main {
 	private static final String GAME_TITLE = "Square - The Game - v.0.6 Alpha";
 	private static double wide, tall;
 	
+	/**
+	 * <p>Decides what the size of the window'll be for the game then opens the main menu</p>
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		wide = screenSize.getWidth() * .8;
@@ -24,6 +28,9 @@ public class Main {
 		setupScreen();
 	}
 	
+	/**
+	 * <p>Opens main menu</p>
+	 */
 	public static void setupScreen() {
 		frame = new JFrame("Square - The Game - Main Menu");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -54,11 +61,19 @@ public class Main {
 		frame.setVisible(true);
 	}
 	
+	/**
+	 * <p>Makes main menu invisible then disposes it</p>
+	 */
 	public static void hideWindow() {
 		frame.setVisible(false);
 		frame.dispose();
 	}
 	
+	/**
+	 * <p>Returns the dimensions that the game window'll be using, not the dimensions of the main menu</p>
+	 * 
+	 * @return Dimension The dimensions that the game window'll be using
+	 */
 	public static Dimension getDimensions() {
 		return new Dimension((int) wide, (int) tall);
 	}
