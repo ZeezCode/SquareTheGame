@@ -2,6 +2,7 @@ package me.zee.FinalProject;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -29,6 +30,13 @@ public class Game extends JGameGUI {
 	private boolean isWDown=false, isADown=false, isSDown=false, isDDown=false;
 	private final int PLAYER_MOVE_SPEED = 10, STARTING_ENEMY_COUNT = 4;
 
+	/**
+	 * <p>Regular constructor, title variable is currently not in use, eventually it'll show at the top of the game screen.</p>
+	 * 
+	 * @param title The title shown at the top of the game screen
+	 * @param wide The width of the game screen
+	 * @param tall The height of the game screen
+	 */
 	public Game(String title, double wide, double tall) {
 		super((int) wide, (int) tall);
 
@@ -37,6 +45,11 @@ public class Game extends JGameGUI {
 		this.tall = (int) tall;
 	}
 	
+	/**
+	 * <p>Decides and returns whether or not the game is over</p>
+	 * 
+	 * @return boolean Whether or not the game is over
+	 */
 	public boolean getGameIsOver() {
 		if (!(gameHasStarted)) return false;
 		
@@ -47,6 +60,9 @@ public class Game extends JGameGUI {
 		return counter == 0;
 	}
 	
+	/**
+	 * <p>Plays the audio file located in resources/bang.wav</p>
+	 */
 	public void playKillSound() {
 		try {
 			Clip clip = AudioSystem.getClip();
@@ -58,10 +74,13 @@ public class Game extends JGameGUI {
 		
 	}
 
+	/**
+	 * <p>Spawns a new enemy onto the game screen, adds it to the enemies ArrayList</p>
+	 */
 	@SuppressWarnings("unused")
 	public void spawnNewEnemy() {
-		Dimension pos = getRandomPosition();
-		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
+		Point pos = getRandomPosition();
+		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getX(), pos.getY(), pos.getX(), pos.getY(), 2);
 		if (enemy==null) {
 			System.out.println("Enemy is null");
 			return;
@@ -70,7 +89,12 @@ public class Game extends JGameGUI {
 		enemies.add(new Enemy(enemy, this));
 	}
 
-	public Dimension getRandomPosition() {
+	/**
+	 * <p>Returns a random position that is within the boundaries of the game screen</p>
+	 * 
+	 * @return Point A random position within the available boundaries of the game screen
+	 */
+	public Point getRandomPosition() { //Finally uses Point rather than Dimension
 		Random generator = new Random();
 		int x = generator.nextInt((int) Main.getDimensions().getWidth()), y = generator.nextInt((int) Main.getDimensions().getHeight());
 		if (x<100) x=100;
@@ -78,35 +102,68 @@ public class Game extends JGameGUI {
 		if (y<100) y = 100;
 		else if (y>(tall-100)) y = tall-100;
 
-		return new Dimension(x, y);
+		return new Point(x, y);
 	}
 
+	/**
+	 * <p>Returns the title currently used in the game screen</p>
+	 * 
+	 * @return String The title of the game screen
+	 */
 	public String getTitle() {
 		return this.title;
 	}
 
+	/**
+	 * <p>Returns the width of the game screen</p>
+	 * 
+	 * @return int The width of the game screen
+	 */
 	public int getWide() {
 		return this.wide;
 	}
-
+	
+	/**
+	 * <p>Returns the height of the game screen</p>
+	 * 
+	 * @return int The height of the game screen
+	 */
 	public int getTall() {
 		return this.tall;
 	}
 
+	/**
+	 * <p>Unpauses the game if it is currently paused and the game hasn't ended yet</p>
+	 */
 	public void resumeGame() {
 		if (gameIsPaused==true && gameHasEnded==false) {
 			gameIsPaused=false;
 		}
 	}
 
+	/**
+	 * <p>Pauses the game, regardless of current circumstances (game didn't start yet, already ended, w/e)</p>
+	 */
 	public void pauseGame() {
 		gameIsPaused = true;
 	}
 
+	/**
+	 * <p>Shuts down the game</p>
+	 */
 	public void endGame() {
 		onStop();
 	}
 
+	/**
+	 * <p>Calculates the distance between two points</p>
+	 * 
+	 * @param x1 X coordinate of the first character
+	 * @param y1 Y coordinate of the first character
+	 * @param x2 X coordinate of the second character
+	 * @param y2 X coordinate of the second character
+	 * @return double The distance between two points
+	 */
 	double calcDistance(double x1, double y1, double x2, double y2) {
 		return Math.hypot(x2 - x1, y2 - y1);
 	}
@@ -118,7 +175,7 @@ public class Game extends JGameGUI {
 	 */
 	@Override
 	protected void onStart(JGameGUI g) {
-		Dimension dim = Main.getDimensions();
+		Dimension dim = Main.getDimensions(); //onStart is called before Constructor, this.wide and this.tall not yet available
 		gameScreen = new Window();
 		player = new CollidableImageElement(new ImageIcon("resources/circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
 		gameScreen.addElement(player);
