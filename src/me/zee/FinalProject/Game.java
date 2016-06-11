@@ -2,19 +2,21 @@ package me.zee.FinalProject;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.ImageIcon;
+import me.zee.FinalProject.Enemy.MOVE_DIRECTION;
 import com.ethanzeigler.jgamegui.JGameGUI;
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
+import com.ethanzeigler.jgamegui.element.ImageElement;
 import com.ethanzeigler.jgamegui.element.TextElement;
 import com.ethanzeigler.jgamegui.window.Window;
 
@@ -61,6 +63,49 @@ public class Game extends JGameGUI {
 	}
 	
 	/**
+	 * <p>Corrects enemy move direction if it needs fixing</p>
+	 * 
+	 * @param enemy The enemy whose move direction is to be fixed
+	 */
+	public void fixEnemyPosition(Enemy enemy) {
+		double x = enemy.getImageElement().getOriginX(), y = enemy.getImageElement().getOriginY();
+		MOVE_DIRECTION dir = enemy.getMoveDirection();
+		
+		if (x<0) {
+			if (dir == MOVE_DIRECTION.LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.RIGHT);
+			else if (dir == MOVE_DIRECTION.UP_LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
+			else if (dir == MOVE_DIRECTION.DOWN_LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP_RIGHT);
+		}
+		else if (y<20) {
+			if (dir == MOVE_DIRECTION.UP_LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
+			else if (dir == MOVE_DIRECTION.UP_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_LEFT);
+			else if (dir == MOVE_DIRECTION.UP)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN);
+		}
+		else if (x>(wide-100)) {
+			if (dir == MOVE_DIRECTION.RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.LEFT);
+			if (dir == MOVE_DIRECTION.UP_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_LEFT);
+			if (dir == MOVE_DIRECTION.DOWN_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP_LEFT);
+		}
+		else if (y>(tall-100)) {
+			if (dir == MOVE_DIRECTION.DOWN_LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP_RIGHT);
+			else if (dir == MOVE_DIRECTION.DOWN_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP_LEFT);
+			else if (dir == MOVE_DIRECTION.DOWN)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP);
+		}
+	}
+	
+	/**
 	 * <p>Plays the audio file located in resources/bang.wav</p>
 	 */
 	public void playKillSound() {
@@ -79,8 +124,8 @@ public class Game extends JGameGUI {
 	 */
 	@SuppressWarnings("unused")
 	public void spawnNewEnemy() {
-		Point pos = getRandomPosition();
-		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getX(), pos.getY(), pos.getX(), pos.getY(), 2);
+		Dimension pos = getRandomPosition();
+		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
 		if (enemy==null) {
 			System.out.println("Enemy is null");
 			return;
@@ -94,7 +139,7 @@ public class Game extends JGameGUI {
 	 * 
 	 * @return Point A random position within the available boundaries of the game screen
 	 */
-	public Point getRandomPosition() { //Finally uses Point rather than Dimension
+	public Dimension getRandomPosition() {
 		Random generator = new Random();
 		int x = generator.nextInt((int) Main.getDimensions().getWidth()), y = generator.nextInt((int) Main.getDimensions().getHeight());
 		if (x<100) x=100;
@@ -102,7 +147,7 @@ public class Game extends JGameGUI {
 		if (y<100) y = 100;
 		else if (y>(tall-100)) y = tall-100;
 
-		return new Point(x, y);
+		return new Dimension(x, y);
 	}
 
 	/**
@@ -122,7 +167,7 @@ public class Game extends JGameGUI {
 	public int getWide() {
 		return this.wide;
 	}
-	
+
 	/**
 	 * <p>Returns the height of the game screen</p>
 	 * 
@@ -164,8 +209,52 @@ public class Game extends JGameGUI {
 	 * @param y2 X coordinate of the second character
 	 * @return double The distance between two points
 	 */
-	double calcDistance(double x1, double y1, double x2, double y2) {
+	public double calcDistance(double x1, double y1, double x2, double y2) {
 		return Math.hypot(x2 - x1, y2 - y1);
+	}
+		
+	/**
+	 * <p>Moves all enemies to their next position</p>
+	 */
+	public void moveAllEnemies() {
+		for (Enemy enemy : enemies) {
+			if (enemy.isAlive()) {
+				switch (enemy.getMoveDirection()) {
+				case DOWN:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
+					break;
+				case DOWN_LEFT:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					break;
+				case DOWN_RIGHT:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					break;
+				case LEFT:
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					break;
+				case RIGHT:
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					break;
+				case UP:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
+					break;
+				case UP_LEFT:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					break;
+				case UP_RIGHT:
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					break;
+				default:
+					//what in the world has happened
+					break;
+				}
+				fixEnemyPosition(enemy);
+			}
+		}
 	}
 
 	/**
@@ -175,7 +264,7 @@ public class Game extends JGameGUI {
 	 */
 	@Override
 	protected void onStart(JGameGUI g) {
-		Dimension dim = Main.getDimensions(); //onStart is called before Constructor, this.wide and this.tall not yet available
+		Dimension dim = Main.getDimensions();
 		gameScreen = new Window();
 		player = new CollidableImageElement(new ImageIcon("resources/circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
 		gameScreen.addElement(player);
@@ -238,7 +327,7 @@ public class Game extends JGameGUI {
 					killCounterDisplay.setText(Integer.toString(killCounter));
 					playKillSound();
 					
-					int newEnemyCount = new Random().nextInt(3);
+					int newEnemyCount = new Random().nextInt(1);
 					
 					Timer timer = new Timer();
 					TimerTask task = new TimerTask() {
@@ -247,7 +336,6 @@ public class Game extends JGameGUI {
 								spawnNewEnemy();
 							}
 							enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
-							
 							if (getGameIsOver()==true) { //Used to have this in another timer, but kept ending the game then spawning new enemies afterwards, dunno why
 														 //This fixed it anyway so w/e
 								gameIsPaused=true;
@@ -255,14 +343,30 @@ public class Game extends JGameGUI {
 								victoryDisplayMsg.setColor(Color.GREEN);
 								gameScreen.addElement(victoryDisplayMsg);
 								gameHasEnded = true;
+								
+								//RecordHandler.insertNewRecord(killCounter, new Date().getTime()/1000); (Not ready for GitHub yet)
 							}
 						}
 					};
 					timer.schedule(task, 100);
+					
 					enemy.kill();
+					
+					//Accidentally left fire.png on computer at school, will likely add this back on Monday
+					/**ImageElement fire = new ImageElement(new ImageIcon("resources/fire.png"), enemy.getPosition().getX(), enemy.getPosition().getY(), 2);
+					gameScreen.addElement(fire);
+					
+					TimerTask fireRemover = new TimerTask() {
+						public void run() {
+							gameScreen.removeElement(fire);
+						}
+					};
+					timer.schedule(fireRemover, 1*1000);**/
 				}
 			}
 		}
+		
+		if (!(gameIsPaused)) moveAllEnemies();
 	}
 
 	/**
