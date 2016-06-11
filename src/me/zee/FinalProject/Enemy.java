@@ -1,6 +1,9 @@
 package me.zee.FinalProject;
 
+import java.awt.Point;
+import java.util.Random;
 import java.util.UUID;
+
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
 
 public class Enemy {
@@ -19,6 +22,7 @@ public class Enemy {
 	 * @param isAlive Whether or not the enemy should be considered alive
 	 */
 	public Enemy(CollidableImageElement imgElement, Game game) {
+		this.moveDirection = Enemy.getRandomDirection();
 		this.UniqueID = UUID.randomUUID();
 		this.isAlive = true;
 		this.imageElement = imgElement;
@@ -47,6 +51,7 @@ public class Enemy {
 	public UUID getUniqueID() {
 		return this.UniqueID;
 	}
+	
 	/**
 	 * <p>Sets the UUID of the enemy</p>
 	 * <p>This may end up being removed, doubt I'll be needing it.</p>
@@ -102,10 +107,49 @@ public class Enemy {
 	}
 	
 	/**
+	 * <p>Returns the coordinates of the enemy in Point format</p>
+	 * 
+	 * @return Point The position of the enemy
+	 */
+	public Point getPosition() {
+		return new Point((int) imageElement.getOriginX(), (int) imageElement.getOriginY());
+	}
+	
+	/**
 	 * <p>Sets the isAlive status to false and removes image from game screen</p>
 	 */
 	public void kill() {
 		this.isAlive = false;
 		game.gameScreen.removeElement(imageElement);
+	}
+	
+	/**
+	 * <p>Returns a random MOVE_DIRECTION</p>
+	 * 
+	 * @return MOVE_DIRECTION A random direction
+	 */
+	public static MOVE_DIRECTION getRandomDirection() {
+		Random gen = new Random();
+		int dir = gen.nextInt(8);
+		switch (dir) {
+		case 0:
+			return MOVE_DIRECTION.DOWN;
+		case 1:
+			return MOVE_DIRECTION.DOWN_LEFT;
+		case 2:
+			return MOVE_DIRECTION.DOWN_RIGHT;
+		case 3:
+			return MOVE_DIRECTION.LEFT;
+		case 4:
+			return MOVE_DIRECTION.RIGHT;
+		case 5:
+			return MOVE_DIRECTION.UP;
+		case 6:
+			return MOVE_DIRECTION.UP_LEFT;
+		case 7:
+			return MOVE_DIRECTION.UP_RIGHT;
+		default:
+			return MOVE_DIRECTION.DOWN; //Don't think this can happen, but just in case
+		}
 	}
 }
