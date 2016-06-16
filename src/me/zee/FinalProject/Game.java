@@ -13,6 +13,7 @@ import java.util.TimerTask;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.ImageIcon;
+import me.zee.FinalProject.Enemy.ENEMY_TYPE;
 import me.zee.FinalProject.Enemy.MOVE_DIRECTION;
 import com.ethanzeigler.jgamegui.JGameGUI;
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
@@ -22,23 +23,18 @@ import com.ethanzeigler.jgamegui.window.Window;
 
 @SuppressWarnings("serial")
 public class Game extends JGameGUI {
+	//private ImageElement[] healthBar = new ImageElement[10];
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private String title;
-	private int wide, tall, killCounter = 0;
+	private int wide, tall, killCounter = 0, health;
 	private boolean gameIsPaused=false, gameHasStarted=false, gameHasEnded=false;
 	public Window gameScreen;
 	private CollidableImageElement player;
-	private TextElement killCounterDisplay;
+	private TextElement killCounterDisplay, healthDisplay;
 	private boolean isWDown=false, isADown=false, isSDown=false, isDDown=false;
 	private final int PLAYER_MOVE_SPEED = 10, STARTING_ENEMY_COUNT = 4;
+	private long lastTimeHit = 0;
 
-	/**
-	 * <p>Regular constructor, title variable is currently not in use, eventually it'll show at the top of the game screen.</p>
-	 * 
-	 * @param title The title shown at the top of the game screen
-	 * @param wide The width of the game screen
-	 * @param tall The height of the game screen
-	 */
 	public Game(String title, double wide, double tall) {
 		super((int) wide, (int) tall);
 
@@ -47,27 +43,17 @@ public class Game extends JGameGUI {
 		this.tall = (int) tall;
 	}
 	
-	/**
-	 * <p>Decides and returns whether or not the game is over</p>
-	 * 
-	 * @return boolean Whether or not the game is over
-	 */
 	public boolean getGameIsOver() {
 		if (!(gameHasStarted)) return false;
 		
 		int counter = 0;
 		for (Enemy enemy : enemies) {
-			if (enemy.isAlive()) counter++;
+			if (enemy.isAlive() && enemy.getEnemyType()==Enemy.ENEMY_TYPE.RED) counter++; //Blue enemies can't be killed, so we only care if all the red ones are dead
 		}
 		return counter == 0;
 	}
 	
-	/**
-	 * <p>Corrects enemy move direction if it needs fixing</p>
-	 * 
-	 * @param enemy The enemy whose move direction is to be fixed
-	 */
-	public void fixEnemyPosition(Enemy enemy) {
+	public void fixEnemyMoveDirection(Enemy enemy) {
 		double x = enemy.getImageElement().getOriginX(), y = enemy.getImageElement().getOriginY();
 		MOVE_DIRECTION dir = enemy.getMoveDirection();
 		
@@ -75,15 +61,15 @@ public class Game extends JGameGUI {
 			if (dir == MOVE_DIRECTION.LEFT)
 				enemy.setMoveDirection(MOVE_DIRECTION.RIGHT);
 			else if (dir == MOVE_DIRECTION.UP_LEFT)
-				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
-			else if (dir == MOVE_DIRECTION.DOWN_LEFT)
 				enemy.setMoveDirection(MOVE_DIRECTION.UP_RIGHT);
+			else if (dir == MOVE_DIRECTION.DOWN_LEFT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
 		}
 		else if (y<20) {
 			if (dir == MOVE_DIRECTION.UP_LEFT)
-				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
-			else if (dir == MOVE_DIRECTION.UP_RIGHT)
 				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_LEFT);
+			else if (dir == MOVE_DIRECTION.UP_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_RIGHT);
 			else if (dir == MOVE_DIRECTION.UP)
 				enemy.setMoveDirection(MOVE_DIRECTION.DOWN);
 		}
@@ -91,27 +77,24 @@ public class Game extends JGameGUI {
 			if (dir == MOVE_DIRECTION.RIGHT)
 				enemy.setMoveDirection(MOVE_DIRECTION.LEFT);
 			if (dir == MOVE_DIRECTION.UP_RIGHT)
-				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_LEFT);
-			if (dir == MOVE_DIRECTION.DOWN_RIGHT)
 				enemy.setMoveDirection(MOVE_DIRECTION.UP_LEFT);
+			if (dir == MOVE_DIRECTION.DOWN_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.DOWN_LEFT);
 		}
 		else if (y>(tall-100)) {
 			if (dir == MOVE_DIRECTION.DOWN_LEFT)
-				enemy.setMoveDirection(MOVE_DIRECTION.UP_RIGHT);
-			else if (dir == MOVE_DIRECTION.DOWN_RIGHT)
 				enemy.setMoveDirection(MOVE_DIRECTION.UP_LEFT);
+			else if (dir == MOVE_DIRECTION.DOWN_RIGHT)
+				enemy.setMoveDirection(MOVE_DIRECTION.UP_RIGHT);
 			else if (dir == MOVE_DIRECTION.DOWN)
 				enemy.setMoveDirection(MOVE_DIRECTION.UP);
 		}
 	}
 	
-	/**
-	 * <p>Plays the audio file located in resources/bang.wav</p>
-	 */
-	public void playKillSound() {
+	public void playSound(String name) {
 		try {
 			Clip clip = AudioSystem.getClip();
-			clip.open(AudioSystem.getAudioInputStream(new File("resources/bang.wav")));
+			clip.open(AudioSystem.getAudioInputStream(new File("resources/"+name+".wav")));
 			clip.start();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -119,26 +102,30 @@ public class Game extends JGameGUI {
 		
 	}
 
-	/**
-	 * <p>Spawns a new enemy onto the game screen, adds it to the enemies ArrayList</p>
-	 */
 	@SuppressWarnings("unused")
 	public void spawnNewEnemy() {
 		Dimension pos = getRandomPosition();
-		CollidableImageElement enemy = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
-		if (enemy==null) {
+		CollidableImageElement image;
+		int num = new Random().nextInt(10); //generates a number 0-19, if it's 0 (5% chance) then we spawn a blue circle
+		if (num==0)
+			image = new CollidableImageElement(new ImageIcon("resources/bluecircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
+		else
+			image = new CollidableImageElement(new ImageIcon("resources/redcircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
+		if (image==null) {
 			System.out.println("Enemy is null");
 			return;
 		}
-		gameScreen.addElement(enemy);
-		enemies.add(new Enemy(enemy, this));
+		
+		Enemy enemy = new Enemy(image, this);
+		if (num==0)
+			enemy.setEnemyType(ENEMY_TYPE.BLUE);
+		else
+			enemy.setEnemyType(ENEMY_TYPE.RED);
+		
+		gameScreen.addElement(image);
+		enemies.add(enemy);
 	}
 
-	/**
-	 * <p>Returns a random position that is within the boundaries of the game screen</p>
-	 * 
-	 * @return Point A random position within the available boundaries of the game screen
-	 */
 	public Dimension getRandomPosition() {
 		Random generator = new Random();
 		int x = generator.nextInt((int) Main.getDimensions().getWidth()), y = generator.nextInt((int) Main.getDimensions().getHeight());
@@ -150,65 +137,32 @@ public class Game extends JGameGUI {
 		return new Dimension(x, y);
 	}
 
-	/**
-	 * <p>Returns the title currently used in the game screen</p>
-	 * 
-	 * @return String The title of the game screen
-	 */
 	public String getTitle() {
 		return this.title;
 	}
 
-	/**
-	 * <p>Returns the width of the game screen</p>
-	 * 
-	 * @return int The width of the game screen
-	 */
 	public int getWide() {
 		return this.wide;
 	}
 
-	/**
-	 * <p>Returns the height of the game screen</p>
-	 * 
-	 * @return int The height of the game screen
-	 */
 	public int getTall() {
 		return this.tall;
 	}
 
-	/**
-	 * <p>Unpauses the game if it is currently paused and the game hasn't ended yet</p>
-	 */
 	public void resumeGame() {
 		if (gameIsPaused==true && gameHasEnded==false) {
 			gameIsPaused=false;
 		}
 	}
 
-	/**
-	 * <p>Pauses the game, regardless of current circumstances (game didn't start yet, already ended, w/e)</p>
-	 */
 	public void pauseGame() {
 		gameIsPaused = true;
 	}
 
-	/**
-	 * <p>Shuts down the game</p>
-	 */
 	public void endGame() {
 		onStop();
 	}
 
-	/**
-	 * <p>Calculates the distance between two points</p>
-	 * 
-	 * @param x1 X coordinate of the first character
-	 * @param y1 Y coordinate of the first character
-	 * @param x2 X coordinate of the second character
-	 * @param y2 X coordinate of the second character
-	 * @return double The distance between two points
-	 */
 	public double calcDistance(double x1, double y1, double x2, double y2) {
 		return Math.hypot(x2 - x1, y2 - y1);
 	}
@@ -221,38 +175,38 @@ public class Game extends JGameGUI {
 			if (enemy.isAlive()) {
 				switch (enemy.getMoveDirection()) {
 				case DOWN:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+enemy.getMoveSpeed());
 					break;
 				case DOWN_LEFT:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+enemy.getMoveSpeed());
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-enemy.getMoveSpeed());
 					break;
 				case DOWN_RIGHT:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+5);
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()+enemy.getMoveSpeed());
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+enemy.getMoveSpeed());
 					break;
 				case LEFT:
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-enemy.getMoveSpeed());
 					break;
 				case RIGHT:
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+enemy.getMoveSpeed());
 					break;
 				case UP:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-enemy.getMoveSpeed());
 					break;
 				case UP_LEFT:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-enemy.getMoveSpeed());
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()-enemy.getMoveSpeed());
 					break;
 				case UP_RIGHT:
-					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-5);
-					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+5);
+					enemy.getImageElement().setOriginY(enemy.getImageElement().getOriginY()-enemy.getMoveSpeed());
+					enemy.getImageElement().setOriginX(enemy.getImageElement().getOriginX()+enemy.getMoveSpeed());
 					break;
 				default:
 					//what in the world has happened
 					break;
 				}
-				fixEnemyPosition(enemy);
+				fixEnemyMoveDirection(enemy);
 			}
 		}
 	}
@@ -269,11 +223,20 @@ public class Game extends JGameGUI {
 		player = new CollidableImageElement(new ImageIcon("resources/circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
 		gameScreen.addElement(player);
 		killCounterDisplay = new TextElement(20, 60, 4, Integer.toString(killCounter));
-		killCounterDisplay.setColor(Color.RED);
+		killCounterDisplay.setColor(Color.BLUE);
 		gameScreen.addElement(killCounterDisplay);
 
 		g.setWindow(gameScreen);
 		g.setLocationRelativeTo(null);
+		
+		//Health bar
+		double xPos = dim.getWidth() * .8, yPos = dim.getHeight() * .1;
+		health = 100;
+		healthDisplay = new TextElement(xPos, yPos, 5, "Health: " + Integer.toString(health));
+		healthDisplay.setColor(Color.RED);
+		gameScreen.addElement(healthDisplay);
+		
+		//Health bar
 
 		Timer timer = new Timer();
 		TimerTask myTask = new TimerTask() {
@@ -323,45 +286,55 @@ public class Game extends JGameGUI {
 		for (Enemy enemy : enemies) {
 			if (enemy.isAlive()) {
 				if (calcDistance(player.getOriginX(), player.getOriginY(), enemy.getImageElement().getOriginX(), enemy.getImageElement().getOriginY())<=85) {
-					killCounter++;
-					killCounterDisplay.setText(Integer.toString(killCounter));
-					playKillSound();
-					
-					int newEnemyCount = new Random().nextInt(1);
-					
-					Timer timer = new Timer();
-					TimerTask task = new TimerTask() {
-						public void run() {
-							for (int i=0; i<newEnemyCount; i++) {
-								spawnNewEnemy();
+					if (enemy.getEnemyType()==Enemy.ENEMY_TYPE.RED) { //Enemy is red, can be killed
+						killCounter++;
+						killCounterDisplay.setText(Integer.toString(killCounter));
+						playSound("bang");
+
+						int newEnemyCount = new Random().nextInt(3);
+
+						Timer timer = new Timer();
+						TimerTask task = new TimerTask() {
+							public void run() {
+								for (int i=0; i<newEnemyCount; i++) {
+									spawnNewEnemy();
+								}
+								enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
+								if (getGameIsOver()==true) { //Used to have this in another timer, but kept ending the game then spawning new enemies afterwards, dunno why
+									//This fixed it anyway so w/e
+									gameIsPaused=true;
+									TextElement victoryDisplayMsg = new TextElement((wide/2)-265, (tall/2), 5, "You've won! There are no more enemies!");
+									victoryDisplayMsg.setColor(Color.GREEN);
+									gameScreen.addElement(victoryDisplayMsg);
+									gameHasEnded = true;
+
+									//saveGameScore();
+								}
 							}
-							enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
-							if (getGameIsOver()==true) { //Used to have this in another timer, but kept ending the game then spawning new enemies afterwards, dunno why
-														 //This fixed it anyway so w/e
-								gameIsPaused=true;
-								TextElement victoryDisplayMsg = new TextElement((wide/2)-265, (tall/2), 5, "You've won! There are no more enemies!");
-								victoryDisplayMsg.setColor(Color.GREEN);
-								gameScreen.addElement(victoryDisplayMsg);
-								gameHasEnded = true;
-								
-								//RecordHandler.insertNewRecord(killCounter, new Date().getTime()/1000); (Not ready for GitHub yet)
+						};
+						timer.schedule(task, 100);
+						enemy.kill();
+						ImageElement fire = new ImageElement(new ImageIcon("resources/fire.png"), enemy.getPosition().getX(), enemy.getPosition().getY(), 2);
+						gameScreen.addElement(fire);
+
+						TimerTask fireRemover = new TimerTask() {
+							public void run() {
+								gameScreen.removeElement(fire);
+							}
+						};
+						timer.schedule(fireRemover, 1*1000);
+					}
+					else { //Enemy is blue, can't be killed, do damage to player
+						if (!(gameIsPaused)) {
+							long curTime = new Date().getTime()/1000;
+							if (curTime - lastTimeHit >=2) {
+								health -= 10;
+								lastTimeHit = curTime;
+								healthDisplay.setText("Health: " + Integer.toString(health));
+								playSound("ouch");
 							}
 						}
-					};
-					timer.schedule(task, 100);
-					
-					enemy.kill();
-					
-					//Accidentally left fire.png on computer at school, will likely add this back on Monday
-					/**ImageElement fire = new ImageElement(new ImageIcon("resources/fire.png"), enemy.getPosition().getX(), enemy.getPosition().getY(), 2);
-					gameScreen.addElement(fire);
-					
-					TimerTask fireRemover = new TimerTask() {
-						public void run() {
-							gameScreen.removeElement(fire);
-						}
-					};
-					timer.schedule(fireRemover, 1*1000);**/
+					}
 				}
 			}
 		}
