@@ -13,7 +13,7 @@ public class Main {
 	private static JLabel menuText;
 	private static JButton startBtn, quitBtn, helpBtn;
 	
-	private static final String GAME_TITLE = "Square - The Game - v.0.6 Alpha";
+	private static final String GAME_TITLE = "Square - The Game - v.0.9 Alpha";
 	private static double wide, tall;
 	
 	/**
@@ -50,7 +50,7 @@ public class Main {
 		quitBtn = new JButton("Quit");
 		frame.add(quitBtn);
 		
-		btnHandler = new ButtonHandler(startBtn, quitBtn, helpBtn, GAME_TITLE, wide, tall);
+		btnHandler = new ButtonHandler(startBtn, helpBtn, quitBtn, GAME_TITLE, wide, tall);
 		
 		startBtn.addActionListener(btnHandler);
 		helpBtn.addActionListener(btnHandler);
