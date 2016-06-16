@@ -41,6 +41,7 @@ public class Game extends JGameGUI {
 		this.title = title;
 		this.wide = (int) wide;
 		this.tall = (int) tall;
+		super.setTitle(title);
 	}
 	
 	public boolean getGameIsOver() {
@@ -106,7 +107,7 @@ public class Game extends JGameGUI {
 	public void spawnNewEnemy() {
 		Dimension pos = getRandomPosition();
 		CollidableImageElement image;
-		int num = new Random().nextInt(10); //generates a number 0-19, if it's 0 (5% chance) then we spawn a blue circle
+		int num = new Random().nextInt(20); //generates a number 0-19, if it's 0 (5% chance) then we spawn a blue circle
 		if (num==0)
 			image = new CollidableImageElement(new ImageIcon("resources/bluecircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
 		else
@@ -230,12 +231,11 @@ public class Game extends JGameGUI {
 		g.setLocationRelativeTo(null);
 		
 		//Health bar
-		double xPos = dim.getWidth() * .8, yPos = dim.getHeight() * .1;
+		double xPos = dim.getWidth() * .87, yPos = dim.getHeight() * .1;
 		health = 100;
 		healthDisplay = new TextElement(xPos, yPos, 5, "Health: " + Integer.toString(health));
 		healthDisplay.setColor(Color.RED);
 		gameScreen.addElement(healthDisplay);
-		
 		//Health bar
 
 		Timer timer = new Timer();
