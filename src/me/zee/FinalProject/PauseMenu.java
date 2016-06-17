@@ -14,14 +14,14 @@ public class PauseMenu {
 	private KeyboardListener kbListener;
 	private Game game;
 	private JFrame frame;
-	private JButton resume, quit, help;
+	private JButton resume, help, restart, quit;
 	public PauseMenu(Game game) {
 		this.game = game;
 		this.kbListener = new KeyboardListener(this);
 		
 		frame = new JFrame("Square - The Game - Pause Menu");
 		frame.setSize(400, 400);
-		frame.setLayout(new GridLayout(3, 1));
+		frame.setLayout(new GridLayout(4, 1));
 		frame.setUndecorated(true);
 		
 		frame.addWindowListener(new WindowAdapter() {
@@ -48,6 +48,17 @@ public class PauseMenu {
 		});
 		frame.add(help);
 		
+		restart = new JButton("Restart Game");
+		restart.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				frame.setVisible(false);
+				frame.dispose();
+				game.endGame();
+			}
+		});
+		frame.add(restart);
+		
 		quit = new JButton("End Game");
 		quit.addActionListener(new ActionListener() {
 			@Override
@@ -56,7 +67,7 @@ public class PauseMenu {
 				if (dialogButton == JOptionPane.YES_OPTION) {
 					frame.setVisible(false);
 					frame.dispose();
-					game.endGame();
+					game.endProgram();
 				}
 			}
 		});
@@ -64,8 +75,9 @@ public class PauseMenu {
 		
 		frame.addKeyListener(kbListener);
 		resume.addKeyListener(kbListener);
-		quit.addKeyListener(kbListener);
 		help.addKeyListener(kbListener);
+		restart.addKeyListener(kbListener);
+		quit.addKeyListener(kbListener);
 		
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
