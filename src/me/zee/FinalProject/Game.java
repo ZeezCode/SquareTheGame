@@ -13,13 +13,14 @@ import java.util.TimerTask;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 import me.zee.FinalProject.Enemy.ENEMY_TYPE;
 import me.zee.FinalProject.Enemy.MOVE_DIRECTION;
 import com.ethanzeigler.jgamegui.JGameGUI;
+import com.ethanzeigler.jgamegui.Window;
 import com.ethanzeigler.jgamegui.element.CollidableImageElement;
 import com.ethanzeigler.jgamegui.element.ImageElement;
 import com.ethanzeigler.jgamegui.element.TextElement;
-import com.ethanzeigler.jgamegui.window.Window;
 
 @SuppressWarnings("serial")
 public class Game extends JGameGUI {
@@ -30,7 +31,7 @@ public class Game extends JGameGUI {
 	private boolean gameIsPaused=false, gameHasStarted=false, gameHasEnded=false;
 	public Window gameScreen;
 	private CollidableImageElement player;
-	private TextElement killCounterDisplay, healthDisplay;
+	private TextElement killCounterDisplay, healthDisplay, endGameMsg;
 	private boolean isWDown=false, isADown=false, isSDown=false, isDDown=false;
 	private final int PLAYER_MOVE_SPEED = 10, STARTING_ENEMY_COUNT = 4;
 	private long lastTimeHit = 0;
@@ -107,7 +108,7 @@ public class Game extends JGameGUI {
 	public void spawnNewEnemy() {
 		Dimension pos = getRandomPosition();
 		CollidableImageElement image;
-		int num = new Random().nextInt(20); //generates a number 0-19, if it's 0 (5% chance) then we spawn a blue circle
+		int num = new Random().nextInt(15); //generates a number 0-19, if it's 0 (6.6% chance) then we spawn a blue circle
 		if (num==0)
 			image = new CollidableImageElement(new ImageIcon("resources/bluecircle.png"), pos.getWidth(), pos.getHeight(), pos.getWidth(), pos.getHeight(), 2);
 		else
@@ -160,8 +161,48 @@ public class Game extends JGameGUI {
 		gameIsPaused = true;
 	}
 
-	public void endGame() {
+	public void endProgram() {
 		onStop();
+	}
+	
+	public void endGame() {
+		Timer timer = new Timer();
+		int choice = JOptionPane.showConfirmDialog(null, "Would you like to play again?", "Play again?", JOptionPane.YES_NO_OPTION);
+		if (choice == JOptionPane.YES_OPTION) {
+			health = 100;
+			lastTimeHit = 0;
+			killCounter = 0;
+
+			isWDown = false;
+			isADown = false;
+			isSDown = false;
+			isDDown = false;
+
+			for (Enemy enemy : enemies) {
+				gameScreen.removeElement(enemy.getImageElement());
+			}
+			enemies.clear();
+			gameScreen.removeElement(endGameMsg);
+				
+			player.setOriginX((wide/2)-50);
+			player.setOriginY((tall/2)-50);
+			healthDisplay.setText("Health: 100");
+			killCounterDisplay.setText("0");
+
+
+			TimerTask myTask = new TimerTask() {
+				@Override
+				public void run() {
+					for (int i=0; i<STARTING_ENEMY_COUNT; i++) {
+						spawnNewEnemy();
+					}
+					gameHasStarted = true;
+					gameIsPaused = false;
+					gameHasEnded = false;
+				}
+			};
+			timer.schedule(myTask, 3*1000);
+		}
 	}
 
 	public double calcDistance(double x1, double y1, double x2, double y2) {
@@ -223,7 +264,7 @@ public class Game extends JGameGUI {
 		gameScreen = new Window();
 		player = new CollidableImageElement(new ImageIcon("resources/circle.png"), (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, (dim.getWidth()/2)-50, (dim.getHeight()/2)-50, 3);
 		gameScreen.addElement(player);
-		killCounterDisplay = new TextElement(20, 60, 4, Integer.toString(killCounter));
+		killCounterDisplay = new TextElement(Integer.toString(killCounter), 20, 60, 4);
 		killCounterDisplay.setColor(Color.BLUE);
 		gameScreen.addElement(killCounterDisplay);
 
@@ -233,7 +274,7 @@ public class Game extends JGameGUI {
 		//Health bar
 		double xPos = dim.getWidth() * .87, yPos = dim.getHeight() * .1;
 		health = 100;
-		healthDisplay = new TextElement(xPos, yPos, 5, "Health: " + Integer.toString(health));
+		healthDisplay = new TextElement("Health: " + Integer.toString(health), xPos, yPos, 5);
 		healthDisplay.setColor(Color.RED);
 		gameScreen.addElement(healthDisplay);
 		//Health bar
@@ -282,8 +323,9 @@ public class Game extends JGameGUI {
 				} else player.setOriginX(wide-88);
 			}
 		}
-
-		for (Enemy enemy : enemies) {
+		
+		for (int i=0; i<enemies.size(); i++) { //I tend to get a ConcurrentModificationException when I use a for-each loop here
+			Enemy enemy = enemies.get(i);
 			if (enemy.isAlive()) {
 				if (calcDistance(player.getOriginX(), player.getOriginY(), enemy.getImageElement().getOriginX(), enemy.getImageElement().getOriginY())<=85) {
 					if (enemy.getEnemyType()==Enemy.ENEMY_TYPE.RED) { //Enemy is red, can be killed
@@ -302,12 +344,18 @@ public class Game extends JGameGUI {
 								enemies.remove(enemy); //The game tends to freeze when I call this outside of the timer task, not sure why but w/e
 								if (getGameIsOver()==true) { //Used to have this in another timer, but kept ending the game then spawning new enemies afterwards, dunno why
 									//This fixed it anyway so w/e
-									gameIsPaused=true;
-									TextElement victoryDisplayMsg = new TextElement((wide/2)-265, (tall/2), 5, "You've won! There are no more enemies!");
-									victoryDisplayMsg.setColor(Color.GREEN);
-									gameScreen.addElement(victoryDisplayMsg);
+									endGameMsg = new TextElement("You've won! There are no more enemies!", (wide/2)-265, (tall/2), 5);
+									endGameMsg.setColor(Color.GREEN);
+									gameScreen.addElement(endGameMsg);
+									gameIsPaused = true;
 									gameHasEnded = true;
-
+									Timer timer = new Timer();
+									TimerTask endGameTimer = new TimerTask() {
+										public void run() {
+											endGame();
+										}
+									};
+									timer.schedule(endGameTimer, 1 * 1000);
 									//saveGameScore();
 								}
 							}
@@ -332,6 +380,20 @@ public class Game extends JGameGUI {
 								lastTimeHit = curTime;
 								healthDisplay.setText("Health: " + Integer.toString(health));
 								playSound("ouch");
+								if (health<=0) {
+									endGameMsg = new TextElement("You've died!", (wide/2)-70, (tall/2), 5);
+									endGameMsg.setColor(Color.RED);
+									gameScreen.addElement(endGameMsg);
+									gameIsPaused = true;
+									gameHasEnded = true;
+									Timer timer = new Timer();
+									TimerTask endGameTimer = new TimerTask() {
+										public void run() {
+											endGame();
+										}
+									};
+									timer.schedule(endGameTimer, 1 * 1000);
+								}
 							}
 						}
 					}
